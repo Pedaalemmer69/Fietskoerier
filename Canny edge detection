@@ -1,0 +1,41 @@
+pip install opencv-python
+
+#importing some useful packages
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+import cv2
+import math
+%matplotlib inline
+
+#reading in an image
+image = mpimg.imread('test_images/My Video-00-06-02-297.jpg')
+
+#printing out some stats and plotting
+print('This image is:', type(image), 'with dimensions:', image.shape)
+plt.imshow(image)  # if you wanted to show a single color channel image called 'gray', for example, call as plt.imshow(gray, cmap='gray')
+
+import os
+import glob
+os.listdir("test_images/")
+
+def show_images(images, cols=3, save=False, title='Default'):
+    cmap = None
+    columns = cols
+    rows = (len(images)+1)//cols
+    
+    plt.figure(figsize=(10,12))
+    for i,image in enumerate(images):
+        plt.subplot(rows,columns, i+1)
+        if len(image.shape) == 2:
+            cmap = 'gray'
+        plt.subplot(rows,cols,i+1)
+        plt.imshow(image, cmap=cmap)
+        plt.xticks([])
+        plt.yticks([])
+    plt.tight_layout(pad=0, h_pad=0, w_pad=0)
+    if save:
+        plt.savefig('image_output/' + title + '.png')
+    plt.show()
+    
+    
