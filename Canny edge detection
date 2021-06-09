@@ -1,12 +1,16 @@
 pip install opencv-python
 
-#importing some useful packages
+#Importing some useful packages
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 import cv2
 import math
 %matplotlib inline
+
+
+
+
 
 #reading in an image
 image = mpimg.imread('test_images/My Video-00-06-02-297.jpg')
@@ -15,9 +19,19 @@ image = mpimg.imread('test_images/My Video-00-06-02-297.jpg')
 print('This image is:', type(image), 'with dimensions:', image.shape)
 plt.imshow(image)  # if you wanted to show a single color channel image called 'gray', for example, call as plt.imshow(gray, cmap='gray')
 
+
+
+
+
+
+
 import os
 import glob
 os.listdir("test_images/")
+
+
+
+
 
 def show_images(images, cols=3, save=False, title='Default'):
     cmap = None
@@ -38,4 +52,144 @@ def show_images(images, cols=3, save=False, title='Default'):
         plt.savefig('image_output/' + title + '.png')
     plt.show()
     
+
+
+
+
+#visualise images
+
+#Create list of input images and print them out
+input_images = [mpimg.imread(img_path) for img_path in glob.glob("test_images/*")]
+
+show_images(input_images, cols=2, save=True, title='Inputimages')
+
+
+
+
+
+
+
+#View grayscale image
+def grayscale(img):
+    return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+gray_scale_images = list(map(grayscale, input_images))
+show_images(gray_scale_images, cols=2, save=True, title='grayscale_images')
+
+
+
+
+
+
+
+#Gussian blur images
+
+def gaussian_blur(img, kernel_size=5):
+    """Applies a Gaussian Noise kernel"""
+    return cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
+#gussian_blur_img= gray_scale_images
+gussian_blur_img = list(map(gaussian_blur, gray_scale_images))
+show_images(gussian_blur_img, cols = 2, save=True, title='Gaussian_blur')
+
+
+
+
+
+
+Canny Edge detection
+
+def canny(img, low_threshold = 50, high_threshold = 150):
+    """Applies the Canny transform"""
+    return cv2.Canny(img, low_threshold, high_threshold)
+
+
+edge_detection = list(map(canny, gussian_blur_img))
+
+show_images(edge_detection, cols =2, save=True, title = 'Canny_edge_image')
+
+
+
+
+
+
+#LET OP FAM DEZE CODE IS EXTRA, HIERMEE PROBEERT HIJ DIE BOUNDARY ACHTIGE POINTS TE VERKRIJGEN ALLEEN LUKT HET NIET ECHT
+
+def region_of_interest(img, vertices):
+    """
+    Applies an image mask.
+    Only keeps the region of the image defined by the polygon
+    formed from `vertices`. The rest of the image is set to black.
+    """
+    #defining a blank mask to start with
+    mask = np.zeros_like(img)   
     
+    #defining a 3 channel or 1 channel color to fill the mask with depending on the input image
+    if len(img.shape) > 2:
+        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
+        ignore_mask_color = (255,) * channel_count
+    else:
+        ignore_mask_color = 255
+        
+    #filling pixels inside the polygon defined by "vertices" with the fill color    
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+    
+    #returning the image only where mask pixels are nonzero
+    masked_image = cv2.bitwise_and(img, mask)
+    return masked_image
+
+def visualise_region(image):
+    """
+    Function takes a colour image and then gives various regional
+    visulisations
+    """
+    dims = image.shape
+    colour_select = np.copy(image)
+    line_select = np.copy(image)
+    
+    grayscale_img = grayscale(image)
+    lowpass = gaussian_blur(grayscale_img)
+    canny_img = canny(lowpass)
+    
+    #Define cordinates for region
+    left_bottom = [0, dims[0]]
+    left_top = [450, 320]
+    right_top = [520, 320]
+    right_bottom = [dims[1], dims[0]]
+    
+    #Plot the two region images side by side
+    plt.figure(figsize=(10,12))
+    #left
+    plt.subplot(1,2,1)
+    plt.imshow(image)
+    x = [left_bottom[0], right_bottom[0], right_top[0], left_top[0] ,left_bottom[0]]
+    y = [left_bottom[1], right_bottom[1], right_top[1], left_top[1] ,left_bottom[1]]
+    plt.plot(x, y, 'r-', lw=4)
+    plt.xticks([])
+    plt.yticks([])
+    #right
+    plt.subplot(1,2,2)
+    plt.imshow(canny_img, cmap='gray')
+    x = [left_bottom[0], right_bottom[0], right_top[0], left_top[0] ,left_bottom[0]]
+    y = [left_bottom[1], right_bottom[1], right_top[1], left_top[1] ,left_bottom[1]]
+    plt.plot(x, y, 'r-', lw=4)
+    plt.xticks([])
+    plt.yticks([])
+    plt.tight_layout(pad=0, h_pad=0, w_pad=0)
+    plt.savefig('image_output/Krokante foto.png')
+    plt.show()
+    
+    
+def region_selection(image):
+    
+    
+    dims = image.shape
+    #Define vertices for the region of intrest
+    vertices = np.array([[(0,dims[0]),(450, 320),(520, 320),(dims[1], dims[0])]], dtype=np.int32)
+    
+    return region_of_interest(image, vertices)
+
+ROI_edge_detection = list(map(region_selection, edge_detection))
+
+show_images(edge_detection, cols =2, save=True, title='ROI_canny')
+visualise_region(input_images[0])
+@Pedaalemmer69
